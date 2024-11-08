@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Clicker Clone</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align items at the top */
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+    #app {
+      width: 100%;
+      max-width: 800px; 
+      height: auto; /* Allow auto height */
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* Three equal columns */
+      grid-auto-rows: minmax(100px, auto); /* Minimum height with auto expansion */
+      gap: 10px; /* More space between sections */
+      padding: 20px; /* Padding around the grid */
+    }
+    .section {
+      padding: 20px;
+      display: flex;
+      flex-direction: column; /* Stack content vertically */
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #ccc;
+      background-color: #ffffff;
+      border-radius: 5px; /* Rounded corners */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    }
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 10px; /* Spacing below the title */
+    }
+    .affordable {
+      color: green;
+    }
+    .unaffordable {
+      color: red;
+    }
+    .cookie-image {
+      width: 200px;
+      cursor: pointer;
+    }
+    .hover-box {
+      width: 200px;
+      padding: 10px;
+      background-color: #333;
+      color: white;
+      position: absolute;
+      white-space: nowrap; /* Prevent text wrapping */
+    }
+  </style>
+  
+  
+</head>
+<body>
+  <div id="app">
+    <!-- Cookie Click Section -->
+    <div class="section">
+      <div>
+        <img 
+          src="images/cookie.png" 
+          alt="Cookie" 
+          class="cookie-image" 
+          @click="incrementCounter"
+        />
+        <p>Total Cookies: {{ cookieCount }}</p>
+        <p>Cookies per Second: {{ calculateTotalProduction() }}</p>
+      </div>
+    </div>
+
+    <!-- Worker Display Section -->
+    <div class="section">
+      <div>
+        <p class="section-title">Your Workers</p>
+        <ul>
+          <li v-for="(worker, index) in workers" :key="index">
+            <span v-if="worker.count > 0">{{ worker.name }}: {{ worker.count }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Worker Prices Section -->
+    <div class="section">
+      <div>
+        <p class="section-title">Worker Prices</p>
+        <ul>
+          <li v-for="(worker, index) in workers" :key="index" :class="getWorkerClass(worker)">
+            {{ worker.name }}: {{ worker.price }} Cookies
+            <button 
+            @click="buy(index)"
+            @mouseover="showBox(worker, $event)" 
+            @mouseleave="hideBox(worker)" 
+            ref="button"
+             >
+              +</button>
+                  <!-- Box that appears on hover, positioned next to the button -->
+          <div
+          v-if="worker.isBoxVisible" 
+          class="hover-box" 
+          :style="{ top: boxPosition.top + 'px', left: boxPosition.left + 'px' }"
+        >
+          {{worker.count}}
+          </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3.2.47/dist/vue.global.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          cookieCount: 0,
+          workers: [
+            { name: 'Grandma', count: 0, price: 10, CpS: 1 ,isBoxVisible: false,},
+            { name: 'Bank', count: 0, price: 50, CpS: 10 ,isBoxVisible: false,},
+            { name: 'Temple', count: 0, price: 100, CpS: 50 ,isBoxVisible: false,}
+          ],
+          
+          boxPosition: { top: 0, left: 0 },
+          interval: null,
+        };
+      },
+      methods: {
+        incrementCounter() {
+          this.cookieCount++;
+        },
+        buy(index) {
+          const worker = this.workers[index];
+          if (this.cookieCount >= worker.price) {
+            this.cookieCount -= worker.price;
+            worker.count++;
+            worker.price = Math.floor(worker.price * 1.15);
+          }
+        },
+        updateCookies() {
+          const totalProduction = this.workers.reduce((total, worker) => {
+            return total + (worker.count * worker.CpS);
+          }, 0);
+          this.cookieCount += totalProduction;
+        },
+        calculateUpdateInterval() {
+          return 1000;
+        },
+        changeUpdateInterval() {
+          clearInterval(this.interval);
+          const newInterval = this.calculateUpdateInterval();
+          this.interval = setInterval(this.updateCookies, newInterval);
+        },
+        getWorkerClass(worker) {
+          return {
+            affordable: this.cookieCount >= worker.price,
+            unaffordable: this.cookieCount < worker.price
+          };
+        },
+        calculateTotalProduction() {
+          return this.workers.reduce((total, worker) => {
+            return total + (worker.count * worker.CpS);
+          }, 0);
+        },
+        showBox(worker, event) {
+        this.activeWorker = worker;  // Set the active worker
+        worker.isBoxVisible = true;    // Show the box
+        
+        // Calculate the box position based on the button position
+        const buttonRect = event.target.getBoundingClientRect();
+        this.boxPosition.top = buttonRect.top + window.scrollY; 
+        this.boxPosition.left = buttonRect.left + window.scrollX - 210; // Offset for visibility (left side)
+      },
+        hideBox(worker) {
+          worker.isBoxVisible = false;  // Hide the box
+          this.activeWorker = null;   // Reset the active worker
+        }
+      },
+      mounted() {
+        this.changeUpdateInterval();
+      },
+      beforeUnmount() {
+        clearInterval(this.interval);
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
