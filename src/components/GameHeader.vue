@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user.ts'
-import { useGameStore } from '../stores/game.ts'
+import { useUserStore } from '../stores/user'
+import { useGameStore } from '../stores/game'
 
 const props = defineProps<{
   username: string
